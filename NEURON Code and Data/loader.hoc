@@ -1,0 +1,32 @@
+strdef cellName
+cellName = "2016Jan26_c2"
+numExpts = 47600
+
+// Define parameters for this instance
+start_col = 0 // First stimulus application in data to simulate
+end_col = 99 // Last stimulus application in data to simulate
+append = 0 // Create or append to existing data files
+graphics = 1 // Plot membrane potential and AF traces
+axonExists = 0 // Does cell have an axon?
+if (axonExists == 0) {
+	nseg_axon = 0
+	create axon[1] // place holder so that NEURON won't complain about some code later
+}
+
+strdef RGCHoc, soma_data, SOCB_data, axon_data, timeFile, amplitudeFile
+n = sprint(RGCHoc,"%s\/%s_%s",cellName,cellName,"RGC.hoc")
+n = sprint(soma_data,"%s\/%s_%s",cellName,cellName,"Vm_soma.txt")
+n = sprint(SOCB_data,"%s\/%s_%s",cellName,cellName,"Vm_SOCB.txt")
+n = sprint(axon_data,"%s\/%s_%s",cellName,cellName,"Vm_axon.txt")
+n = sprint(timeFile,"%s\/%s_%s",cellName,cellName,"tvec.txt")
+n = sprint(amplitudeFile,"%s\/%s_%s",cellName,cellName,"ElectrodeAmplitudes.txt")
+
+n = load_file("nrngui.hoc")
+
+n = load_file(RGCHoc)
+
+n = load_file("RGC_physiol.hoc")
+
+n = load_file("RGC_stim.hoc")
+
+n = load_file("RGC_wn.hoc")

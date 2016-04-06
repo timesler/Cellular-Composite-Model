@@ -1,0 +1,40 @@
+// Read in stimulation data (activating function)
+dt = 0.025
+tstop = 10
+
+// Define the number of time points and segments
+nrow = 121
+ncol = nseg_soma + nseg_axon + nseg_dend + nseg_initseg + nseg_SOCB + nseg_narrowr
+
+//(uA) the reference (pre-weighted) stimulus amplitude
+// This is used to scale the amplitudes before scaling to the white noise data
+I_ref = 100
+
+print "Read in the vector of time points"
+objref tvec, f
+tvec = new Vector()
+f = new File()
+n = f.ropen(timeFile)
+n = tvec.scanf(f)
+n = f.ropen()
+
+print "Read in the white noise stimulus"
+objref WN
+WN = new Matrix()
+n = f.ropen(amplitudeFile)
+n = WN.scanf(f,20,numExpts)
+n = f.ropen()
+
+print "Read in calculated AF for each electrode separately"
+for i = 1,20 {
+	strdef cmd
+	sprint(cmd,"objref AF_E%1.0f",i)
+	execute(cmd)
+	sprint(cmd,"AF_E%1.0f = new Matrix()",i)
+	execute(cmd)
+	sprint(cmd,"f.ropen(\"%s\/%s_AF_E%1.0f.txt\")",cellName,cellName,i)
+	execute(cmd)
+	sprint(cmd,"AF_E%1.0f.scanf(f,nrow,ncol)",i)
+	execute(cmd)
+	f.ropen()
+}

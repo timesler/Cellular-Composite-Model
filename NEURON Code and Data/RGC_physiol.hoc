@@ -1,0 +1,94 @@
+forall insert pas
+forall insert spike
+forall insert hd
+forall insert lva
+forall insert nap
+forall ena = 35.0
+forall ek =-75
+forall insert cad
+forall e_pas =-72.0
+forall Ra=110
+global_ra=110
+forall g_pas = (8e-6)*100
+v_init = -69.5
+
+celsius=22
+
+// Params for example mouse simulation in MM's paper (Fig. 11)
+forall gbar_nap = 2.33e-5 // 	gNaPbar
+forall gbar_lva = 2.7e-4 // 	gTbar
+forall ghdbar_hd = 1e-11 //		ghbar
+
+for ward = 0,nseg_soma-1 {
+	soma[ward] {
+		gcabar_spike = 0.0015
+		gkbar_spike = 0.018
+		gabar_spike = 0.054
+		gkcbar_spike = 0.000065		//65 uS/cm2
+		gnabar_spike = 0.080
+	}
+}
+
+for ward = 0,nseg_axon-1 {
+	axon[ward] {
+		gcabar_spike = 0.0
+		gkbar_spike = 0.018
+		gabar_spike = 0.0
+		gkcbar_spike = 0.000065
+		gnabar_spike = 0.070
+		g_pas = g_pas*25/15
+		gbar_nap = 0.05*gbar_nap
+	}
+}
+
+for ward = 0,nseg_dend-1 {
+	dend[ward] {
+		gcabar_spike = 0.002
+		gkbar_spike = 0.012
+		gabar_spike = 0.036
+		gkcbar_spike = 0.000001
+		gnabar_spike = 0.025
+		gbar_lva= 5*gbar_lva
+	}
+}
+
+for ward = 0,nseg_initseg-1 {
+	initseg[ward]{
+		gcabar_spike = 0.0015
+		gkbar_spike = 0.018
+		gabar_spike = 0.054
+		gkcbar_spike = 0.000065
+		gnabar_spike = 0.15
+		gbar_nap = 0.05*gbar_nap
+	}
+}
+
+for ward = 0,nseg_SOCB-1 {
+      SOCB[ward]{
+		gcabar_spike = 0.0015-(ward/nseg_SOCB)*0.0015 // gradually transitions from initialseg to narrowr
+		gkbar_spike = 0.018
+		gabar_spike = 0.054-(ward/nseg_SOCB)*0.054 // gradually transitions from initialseg to narrowr
+		gkcbar_spike = 0.000065
+		gnabar_spike = 5*0.080
+		gbar_nap = 5*gbar_nap
+	}
+}
+
+for ward = 0,nseg_narrowr-1 {
+      narrowr[ward]{
+		gcabar_spike = 0.0
+		gkbar_spike = 0.018
+		gabar_spike = 0.0
+		gkcbar_spike = 0.000065
+		gnabar_spike = 0.2 // Original
+		gbar_nap = 0.05*gbar_nap
+	}
+}
+
+//load_proc("nrnmainmenu")
+access soma
+
+init()
+forall depth_cad = diam / 2
+init()
+

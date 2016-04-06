@@ -1,0 +1,275 @@
+// Define object references
+for i = 1,20 {
+	sprint(cmd,"objref AF_E%1.0f_S",i)
+	execute(cmd)
+	sprint(cmd,"AF_E%1.0f_S = new Matrix()",i)
+	execute(cmd)
+}
+
+objref AF
+AF = new Matrix()
+
+for ward = 0,nseg_soma-1 {
+	soma[ward] {
+		sprint(cmd,"objref stim_soma_%1.0f, AF_soma_%1.0f",ward,ward)
+		execute(cmd)
+		sprint(cmd,"stim_soma_%1.0f = new IClamp(0.5)",ward)
+		execute(cmd)
+		sprint(cmd,"AF_soma_%1.0f = new Vector()",ward)
+		execute(cmd)
+	}
+}
+
+for ward = 0,nseg_axon-1 {
+	axon[ward] {
+		sprint(cmd,"objref stim_axon_%1.0f, AF_axon_%1.0f",ward,ward)
+		execute(cmd)
+		sprint(cmd,"stim_axon_%1.0f = new IClamp(0.5)",ward)
+		execute(cmd)
+		sprint(cmd,"AF_axon_%1.0f = new Vector()",ward)
+		execute(cmd)
+	}
+}
+
+for ward = 0,nseg_dend-1 {
+	dend[ward] {
+		sprint(cmd,"objref stim_dend_%1.0f, AF_dend_%1.0f",ward,ward)
+		execute(cmd)
+		sprint(cmd,"stim_dend_%1.0f = new IClamp(0.5)",ward)
+		execute(cmd)
+		sprint(cmd,"AF_dend_%1.0f = new Vector()",ward)
+		execute(cmd)
+	}
+}
+
+for ward = 0,nseg_initseg-1 {
+	initseg[ward]{
+		sprint(cmd,"objref stim_initseq_%1.0f, AF_initseg_%1.0f",ward,ward)
+		execute(cmd)
+		sprint(cmd,"stim_initseq_%1.0f = new IClamp(0.5)",ward)
+		execute(cmd)
+		sprint(cmd,"AF_initseg_%1.0f = new Vector()",ward)
+		execute(cmd)
+	}
+}
+
+for ward = 0,nseg_SOCB-1 {
+	SOCB[ward]{
+		sprint(cmd,"objref stim_SOCB_%1.0f, AF_SOCB_%1.0f",ward,ward)
+		execute(cmd)
+		sprint(cmd,"stim_SOCB_%1.0f = new IClamp(0.5)",ward)
+		execute(cmd)
+		sprint(cmd,"AF_SOCB_%1.0f = new Vector()",ward)
+		execute(cmd)
+	}
+}
+
+for ward = 0,nseg_narrowr-1 {
+	narrowr[ward]{
+		sprint(cmd,"objref stim_narrowr_%1.0f, AF_narrowr_%1.0f",ward,ward)
+		execute(cmd)
+		sprint(cmd,"stim_narrowr_%1.0f = new IClamp(0.5)",ward)
+		execute(cmd)
+		sprint(cmd,"AF_narrowr_%1.0f = new Vector()",ward)
+		execute(cmd)
+	}
+}
+
+objref Vm_soma, Vm_soma_f, Vm_SOCB, Vm_SOCB_f, Vm_axon, Vm_axon_f
+Vm_soma = new Vector()
+Vm_SOCB = new Vector()
+Vm_axon = new Vector()
+Vm_soma_f = new File()
+Vm_SOCB_f = new File()
+Vm_axon_f = new File()
+if (append == 1) {
+	n = Vm_soma_f.aopen(soma_data)
+	n = Vm_SOCB_f.aopen(SOCB_data)
+	if (axonExists == 1) {
+		n = Vm_axon_f.aopen(axon_data)
+	}
+} else {
+	n = Vm_soma_f.wopen(soma_data)
+	n = Vm_SOCB_f.wopen(SOCB_data)
+	if (axonExists == 1) {
+		n = Vm_axon_f.wopen(axon_data)
+	}
+}
+
+if (graphics == 1) {
+	load_file("RGC_graph.ses")
+}
+
+// Iterate through stimulus applications and record the membrane potential in a text file
+
+print "Iterate through stimulus applications..."
+print "    Scale AF's by the white noise amplitude"
+print "    Sum weighted individual electrode AF's"
+print "    Count through segments sequentially"
+
+n = Vm_soma.record(&soma[0].v(0.5))
+n = Vm_SOCB.record(&SOCB[int(nseg_SOCB/2)].v(1.0))
+if (axonExists == 1) {
+	n = Vm_axon.record(&axon[142].v(0.5))
+}
+
+n = cvode.cache_efficient(1)
+for WN_col = start_col,end_col {
+
+	//print "Scale AF's by the white noise amplitude"
+	for i = 1,20 {
+		sprint(cmd,"AF_E%1.0f_S = AF_E%1.0f.c.muls(WN.x[%1.0f][WN_col]/I_ref)",i,i,i-1)
+		execute(cmd)
+	}
+
+	//print "Sum weighted individual electrode AF's"
+	AF = AF_E1.c.add(AF_E2_S)
+	for i = 3,20 {
+		sprint(cmd,"AF.add(AF_E%1.0f_S)",i)
+		execute(cmd)
+	}
+
+	//print "Count through segments sequentially"
+	count = 0
+
+	for ward = 0,nseg_soma-1 {
+		soma[ward] {
+			sprint(cmd,"stim_soma_%1.0f.del = 0",ward)
+			execute(cmd)
+			sprint(cmd,"stim_soma_%1.0f.dur = 3",ward)
+			execute(cmd)
+			sprint(cmd,"AF.getcol(count,AF_soma_%1.0f)",ward)
+			execute(cmd)
+			sprint(cmd,"AF_soma_%1.0f.play(&stim_soma_%1.0f.amp,tvec)",ward,ward)
+			execute(cmd)
+		}
+		count = count + 1
+	}
+
+	for ward = 0,nseg_axon-1 {
+		axon[ward] {
+			sprint(cmd,"stim_axon_%1.0f.del = 0",ward)
+			execute(cmd)
+			sprint(cmd,"stim_axon_%1.0f.dur = 3",ward)
+			execute(cmd)
+			sprint(cmd,"AF.getcol(count,AF_axon_%1.0f)",ward)
+			execute(cmd)
+			sprint(cmd,"AF_axon_%1.0f.play(&stim_axon_%1.0f.amp,tvec)",ward,ward)
+			execute(cmd)
+		}
+		count = count + 1
+	}
+
+	for ward = 0,nseg_dend-1 {
+		dend[ward] {
+			sprint(cmd,"stim_dend_%1.0f.del = 0",ward)
+			execute(cmd)
+			sprint(cmd,"stim_dend_%1.0f.dur = 3",ward)
+			execute(cmd)
+			sprint(cmd,"AF.getcol(count,AF_dend_%1.0f)",ward)
+			execute(cmd)
+			sprint(cmd,"AF_dend_%1.0f.play(&stim_dend_%1.0f.amp,tvec)",ward,ward)
+			execute(cmd)
+		}
+		count = count + 1
+	}
+
+	for ward = 0,nseg_initseg-1 {
+		initseg[ward]{
+			sprint(cmd,"stim_initseq_%1.0f.del = 0",ward)
+			execute(cmd)
+			sprint(cmd,"stim_initseq_%1.0f.dur = 3",ward)
+			execute(cmd)
+			sprint(cmd,"AF.getcol(count,AF_initseg_%1.0f)",ward)
+			execute(cmd)
+			sprint(cmd,"AF_initseg_%1.0f.play(&stim_initseq_%1.0f.amp,tvec)",ward,ward)
+			execute(cmd)
+		}
+		count = count + 1
+	}
+
+	for ward = 0,nseg_SOCB-1 {
+		SOCB[ward]{
+			sprint(cmd,"stim_SOCB_%1.0f.del = 0",ward)
+			execute(cmd)
+			sprint(cmd,"stim_SOCB_%1.0f.dur = 3",ward)
+			execute(cmd)
+			sprint(cmd,"AF.getcol(count,AF_SOCB_%1.0f)",ward)
+			execute(cmd)
+			sprint(cmd,"AF_SOCB_%1.0f.play(&stim_SOCB_%1.0f.amp,tvec)",ward,ward)
+			execute(cmd)
+		}
+		count = count + 1
+	}
+
+	for ward = 0,nseg_narrowr-1 {
+		  narrowr[ward]{
+			sprint(cmd,"stim_narrowr_%1.0f.del = 0",ward)
+			execute(cmd)
+			sprint(cmd,"stim_narrowr_%1.0f.dur = 3",ward)
+			execute(cmd)
+			sprint(cmd,"AF.getcol(count,AF_narrowr_%1.0f)",ward)
+			execute(cmd)
+			sprint(cmd,"AF_narrowr_%1.0f.play(&stim_narrowr_%1.0f.amp,tvec)",ward,ward)
+			execute(cmd)
+		}
+		count = count + 1
+	}
+	sprint(cmd,"Stimulus application: %.0f",WN_col+1)
+	print cmd
+	
+	finitialize()
+	run()
+	
+	for ward = 0,nseg_soma-1 {
+		soma[ward] {
+			sprint(cmd,"AF_soma_%1.0f.play_remove()",ward)
+			execute(cmd)
+		}
+	}
+
+	for ward = 0,nseg_axon-1 {
+		axon[ward] {
+			sprint(cmd,"AF_axon_%1.0f.play_remove()",ward)
+			execute(cmd)
+		}
+	}
+
+	for ward = 0,nseg_dend-1 {
+		dend[ward] {
+			sprint(cmd,"AF_dend_%1.0f.play_remove()",ward)
+			execute(cmd)
+		}
+	}
+
+	for ward = 0,nseg_initseg-1 {
+		initseg[ward]{
+			sprint(cmd,"AF_initseg_%1.0f.play_remove()",ward)
+			execute(cmd)
+		}
+	}
+
+	for ward = 0,nseg_SOCB-1 {
+		SOCB[ward]{
+			sprint(cmd,"AF_SOCB_%1.0f.play_remove()",ward)
+			execute(cmd)
+		}
+	}
+
+	for ward = 0,nseg_narrowr-1 {
+		  narrowr[ward]{
+			sprint(cmd,"AF_narrowr_%1.0f.play_remove()",ward)
+			execute(cmd)
+		}
+	}
+	Vm_soma.printf(Vm_soma_f,"%f ")
+	Vm_SOCB.printf(Vm_SOCB_f,"%f ")
+	if (axonExists == 1) {
+		Vm_axon.printf(Vm_axon_f,"%f ")
+	}
+}
+Vm_soma_f.close
+Vm_SOCB_f.close
+if (axonExists == 1) {
+	Vm_axon_f.close
+}
