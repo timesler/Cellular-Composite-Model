@@ -169,6 +169,9 @@ h5create([dataFolder,'Ve_depth',num2str(Ya*1e6),'.h5'],'/Ve_im',[length(Xp) leng
 
 h2 = waitbar(0,'Calculating Extracellular Potential');
 
+% Apply Lanczos sigma factor to reduce Gibbs phenomenon
+sig = sinc(T/d_t*pi*0.5/length(T));
+
 %% Iterate through temporal frequencies
 % In each iteration of this loop, the extracellular potential is calculated
 % for a single value of omega by calculating the 2D IFFT over the spatial
@@ -199,10 +202,10 @@ for j = 1:length(w)
     
     %% Define eta coefficients
     
-    eta_I = sqrt((kx_m.^2*sigma_I    + kz_m.^2*sigma_I   )./sigma_I  );
-    eta_L = sqrt((kx_m.^2*sigma_L_xz + kz_m.^2*sigma_L_xz)./sigma_L_y);
-    eta_F = sqrt((kx_m.^2*xi_T_f     + kz_m.^2.*xi_L_f_m )./xi_T_f   );
-    eta_V = sqrt((kx_m.^2*sigma_V    + kz_m.^2*sigma_V   )./sigma_V  );
+    eta_I = sqrt( kx_m.^2 + kz_m.^2 );
+    eta_L = sqrt((kx_m.^2*sigma_L_xz + kz_m.^2*sigma_L_xz)/sigma_L_y);
+    eta_F = sqrt((kx_m.^2*xi_T_f     + kz_m.^2.*xi_L_f_m )/xi_T_f   );
+    eta_V = eta_I;
     
     %% Iterate through the point sources
     
@@ -212,8 +215,6 @@ for j = 1:length(w)
         %% Define point source stimulation in the time Fourier domain
         
         % Biphasic pulse - with phase gap, I_G
-        % Apply Lanczos sigma factor to reduce Gibbs phenomenon
-        sig = sinc(T/d_t*pi*0.5/length(T));
         I_hat = I_D(i)*I_M(i)/sqrt(2*pi).*sinc(I_D(i)*w_m/2/pi)...
             .*(exp(-1i*I_D(i)*w_m/2)-exp(-1i*w_m*(3*I_D(i)/2+I_G(i)))).*sig(j);
         
