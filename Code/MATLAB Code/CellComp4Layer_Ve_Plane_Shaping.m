@@ -208,12 +208,14 @@ for j = 1:length(w)
     
     Ve_tmp = zeros(length(Xp),length(Zp));
     
+    % Calculate Lanczos sigma factor - used later to adjust for Gibbs phenomenon in step current
+    sig = sinc(T/d_t*pi*0.5/length(T));
+    
     for i = 1:length(I_M)
         %% Define point source stimulation in the time Fourier domain
         
         % Biphasic pulse - with phase gap, I_G
         % Apply Lanczos sigma factor to reduce Gibbs phenomenon
-        sig = sinc(T/d_t*pi*0.5/length(T));
         I_hat = I_D(i)*I_M(i)/sqrt(2*pi).*sinc(I_D(i)*w_m/2/pi)...
             .*(exp(-1i*I_D(i)*w_m/2)-exp(-1i*w_m*(3*I_D(i)/2+I_G(i)))).*sig(j);
         
